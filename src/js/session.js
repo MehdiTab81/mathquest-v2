@@ -164,6 +164,7 @@ function finishSession(timeUp) {
   const before = s.chapter.prefixes || s.chapter.id === MIX.id ? chapterStats(s.lv, s.chapter) : null;
   store.d.xp += s.xp;
   store.save();
+  cloudRecordSession(s);
   const total = s.qs.length, rate = good / total;
   const verdict = rate === 1 ? 'Sans faute' : rate >= .9 ? 'Excellent' : rate >= .75 ? 'Très bien' : rate >= .5 ? 'Bien joué' : 'À retravailler';
   const advice = rate >= .75 ? 'Tu maîtrises bien ces automatismes. Garde le rythme avec une série par jour.' : rate >= .5 ? 'C’est en bonne voie. Relis les méthodes ci-dessous puis relance une série.' : 'Prends le temps de relire chaque méthode, puis refais une série sur les erreurs.';

@@ -16,6 +16,7 @@ function parseRoute() {
   if (a === 'chapitre' && b) return { tab: 'home', chapter: b };
   if (a === 'a-deux') return { tab: 'duo' };
   if (a === 'progres') return { tab: 'progress' };
+  if (a === 'prof') { const [, , c] = h.split('/'); return { tab: 'prof', cls: b || null, stu: c || null }; }
   return { tab: 'home', chapter: null };
 }
 
@@ -146,6 +147,7 @@ function progressView() {
   return `${topBar()}${levelSeg(lv)}
   <div class="layout">
     <div class="side">
+      ${classCardHTML()}
       <div class="kpis"><div><b>${L.n}</b><span>niveau de joueur</span></div><div><b>${store.dayStreak()}</b><span>jours d'affilée</span></div><div><b>${total.toLocaleString('fr-FR')}</b><span>réponses</span></div></div>
       <div class="xp"><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${L.need}" aria-valuenow="${L.rest}" aria-label="Expérience"><i style="width:${Math.round(L.rest / L.need * 100)}%"></i></div>
         <p>${L.rest} / ${L.need} XP avant le niveau ${L.n + 1}. Une bonne réponse rapporte 10 XP, une série d'affilée rapporte des bonus.</p></div>
@@ -160,7 +162,8 @@ function progressView() {
       <div class="rows">${chaptersOf(lv).map(ch => { const st = chapterStats(lv, ch);
         return `<button class="row" data-go="#/chapitre/${ch.id}"><div><div class="n">${esc(ch.name)}</div><div class="s">${st.t ? `${plural(st.t, 'réponse')} · ` : ''}${medalText(st)}</div></div>${cellsHTML(st.step)}</button>`; }).join('')}</div>
       ${legendHTML()}
-      <p class="note">Ta progression reste sur cet appareil, dans ce navigateur. Aucun compte, aucune donnée envoyée.</p>
+      <p class="note">${pupil() && cloudOn() ? 'Ta progression est enregistrée sur cet appareil et envoyée à ton professeur : ton prénom, ta réussite par notion et le résumé de tes séries. Rien d’autre.' : 'Ta progression reste sur cet appareil, dans ce navigateur. Aucun compte, aucune donnée envoyée.'}</p>
+      ${cloudOn() ? '<div class="note"><button class="link" data-go="#/prof">Espace professeur</button></div>' : ''}
       <div class="note"><button class="danger" data-act="reset">Remettre à zéro la progression de ${LEVELS[lv].short}</button></div>
     </div>
   </div>`;
@@ -215,11 +218,12 @@ function render() {
   document.documentElement.dataset.level = route.tab === 'duo' ? (store.d.duoLevel || store.d.level) : store.d.level;
   let html;
   if (route.tab === 'progress') html = progressView();
+  else if (route.tab === 'prof') html = profView();
   else if (route.tab === 'duo') html = duoView();
   else if (route.chapter) html = chapterView(route.chapter);
   else html = homeView();
   app.innerHTML = `<div class="shell">${html}</div>`;
-  const titles = { home: 'Jouer', duo: 'À deux', progress: 'Progrès' };
+  const titles = { home: 'Jouer', duo: 'À deux', progress: 'Progrès', prof: 'Espace prof' };
   document.title = `MathQuest · ${route.chapter ? (chapterById(store.d.level, route.chapter) || {}).name || '' : titles[route.tab]}`;
 }
 

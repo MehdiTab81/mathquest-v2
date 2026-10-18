@@ -411,6 +411,19 @@ svg.i.sm { width: 18px; height: 18px; }
 .endbar .btn.ink { background: var(--sail); color: var(--ink); }
 .endbar .btn.line { border-color: var(--sail); color: var(--sail); }
 
+/* Ma classe et espace prof */
+.drop.slim, .layout .drop.slim { min-height: 0; }
+.classcard { margin: 16px 16px 0; padding: 16px; background: var(--paper); border: 2px solid var(--ink); border-radius: var(--r-lg); display: grid; gap: 12px; }
+.classcard h2 { font-size: 22px; }
+.classcard p { font-size: 15px; }
+.form-in .field label { display: block; font-weight: 800; font-size: 14px; margin-bottom: 6px; }
+.classcard .field label { display: block; font-weight: 800; font-size: 14px; margin-bottom: 6px; }
+.msg { background: var(--bad); color: var(--ink); border-radius: var(--r); padding: 10px 12px; font-weight: 700; font-size: 14px; }
+.okmsg { background: var(--ok); color: var(--ink); border-radius: var(--r); padding: 10px 12px; font-weight: 700; font-size: 14px; }
+.classcode { font-weight: 900; font-stretch: 62%; font-size: 64px; line-height: 1; letter-spacing: .04em; max-width: none !important; }
+.notion small { font-size: 12px; }
+.layout .classcard { margin-left: 0; margin-right: 0; }
+
 /* Toast */
 .toast {
   position: fixed; left: 50%; bottom: calc(88px + var(--safe-b)); transform: translateX(-50%); z-index: 90;

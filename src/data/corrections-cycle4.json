@@ -1,0 +1,21 @@
+{
+  "source": "Audit 4e/3e du 18 octobre 2026 contre le programme du cycle 4 (BO spécial n°11 du 26 novembre 2015, ajusté en 2020) et les repères annuels (BO n°22 du 29 mai 2019). Appliqué au moment du build.",
+  "rules": [
+    { "why": "Les vecteurs ne sont pas au programme du cycle 4 (programme de 2de).", "levels": ["3eme", "4eme"], "category": "Vecteurs", "action": "remove" },
+    { "why": "Les quartiles ne sont pas au programme du cycle 4 (indicateurs : moyenne, médiane, étendue).", "levels": ["3eme", "4eme"], "category": "Statistiques : quartiles", "action": "remove" },
+    { "why": "Réunion et intersection d'événements (∪, ∩, P(A ∪ B)) relèvent de la 2de.", "levels": ["3eme", "4eme"], "category": "Probabilité : réunion et intersection", "action": "remove" },
+    { "why": "Notations ensemblistes ∩ et ∪ hors programme du cycle 4.", "levels": ["3eme", "4eme"], "category": "Probabilités : ensembles", "textIncludes": "∩", "action": "remove" },
+    { "why": "Notations ensemblistes ∩ et ∪ hors programme du cycle 4.", "levels": ["3eme", "4eme"], "category": "Probabilités : ensembles", "textIncludes": "∪", "action": "remove" },
+    { "why": "« Ensemble vide » : vocabulaire de 2de.", "levels": ["3eme", "4eme"], "category": "Probabilités : ensembles", "textIncludes": "impossible correspond", "action": "remove" },
+    { "why": "Le PGCD n'est plus nommé au programme ; on travaille diviseurs communs et décomposition en facteurs premiers.", "levels": ["3eme", "4eme"], "category": "PGCD", "action": "edit",
+      "textRegex": ["^PGCD\\((\\d+), (\\d+)\\)\\s*\\??$", "Plus grand diviseur commun de $1 et $2 ?"],
+      "set": { "category": "Arithmétique : diviseurs communs", "hint": "Décompose les deux nombres en facteurs premiers et garde les facteurs communs." } },
+    { "why": "Même correction pour les questions type brevet.", "levels": ["3eme", "4eme"], "category": "Brevet – PGCD", "action": "edit",
+      "textRegex": ["^PGCD\\((\\d+), (\\d+)\\)\\s*\\??$", "Plus grand diviseur commun de $1 et $2 ?"],
+      "set": { "category": "Brevet – Arithmétique", "hint": "Décompose les deux nombres en facteurs premiers et garde les facteurs communs." } },
+    { "why": "Question qui dépendait de la précédente : elle doit se comprendre seule.", "levels": ["3eme", "4eme"], "category": "Statistiques : valeur extrême", "textIncludes": "Même série", "action": "edit",
+      "set": { "text": "Série 5 ; 6 ; 7 ; 8 ; 9. On remplace 9 par 90. La moyenne…", "hint": "La moyenne utilise toutes les valeurs : une valeur extrême la fait beaucoup bouger." } },
+    { "why": "Énoncé ambigu.", "levels": ["3eme", "4eme"], "category": "Brevet – Dénombrement", "action": "edit",
+      "set": { "text": "Un code = une lettre (A, B ou C) puis un chiffre (0 à 9). Combien de codes ?", "hint": "3 choix pour la lettre × 10 choix pour le chiffre." } }
+  ]
+}

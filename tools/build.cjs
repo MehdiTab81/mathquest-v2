@@ -4,15 +4,16 @@ const fs = require('fs'), path = require('path');
 const root = path.join(__dirname, '..');
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 
-const data = JSON.parse(read('src/data/questions.json'));
-const extra = JSON.parse(read('src/data/complements-5e-2026.json'));
-const seen = new Set(data.levels['5eme'].own.map(q => `${q.category}|${q.text}`));
-for (const q of extra.questions) if (!seen.has(`${q.category}|${q.text}`)) data.levels['5eme'].own.push(q);
+const { data, report } = require('./bank.cjs').loadBank();
+for (const r of report) if (r.removed || r.edited) console.log(`correction : ${r.removed} retirée(s), ${r.edited} modifiée(s) · ${r.why}`);
 
-const order = ['core', 'kit', 'figures', 'screens', 'session', 'duo', 'main'];
+const order = ['core', 'kit', 'figures', 'screens', 'cloud', 'prof', 'session', 'duo', 'main'];
+const cloud = JSON.parse(read('src/cloud-config.json'));
+if (process.env.MQ_CLOUD_URL) Object.assign(cloud, { url: process.env.MQ_CLOUD_URL, key: process.env.MQ_CLOUD_KEY || 'test' }); // essais locaux
 const js = order.map(f => `// ---- ${f}.js\n` + read(`src/js/${f}.js`)).join('\n');
 const html = read('src/index.html')
   .replace('/*__CSS__*/', () => read('src/styles.css'))
+  .replace('/*__CLOUD__*/null', () => JSON.stringify({ url: cloud.url || '', key: cloud.key || '' }))
   .replace('/*__DATA__*/null', () => JSON.stringify(data).replace(/</g, '\\u003c'))
   .replace('/*__JS__*/', () => js);
 fs.writeFileSync(path.join(root, 'index.html'), html);
