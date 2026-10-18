@@ -1,0 +1,54 @@
+{
+  "source": "Automatismes ajoutés pour le programme de 5e de la rentrée 2026 (BO n°10 du 5 mars 2026) : probabilités sous plusieurs écritures, 1 %, 10 %, 50 %, quadrilatères et triangles particuliers, nature des angles, ×10/÷10, procédures de proportionnalité.",
+  "questions": [
+    { "text": "Probabilité 1/4 en écriture décimale", "answer": "0.25", "category": "Probabilité simple : écritures", "hint": "1/4 = 1 ÷ 4 = 0,25" },
+    { "text": "Probabilité 0,2 en fraction", "answer": "1/5", "category": "Probabilité simple : écritures", "hint": "0,2 = 2/10 = 1/5" },
+    { "text": "Probabilité 3/4 en pourcentage (%)", "answer": "75", "category": "Probabilité simple : écritures", "hint": "3/4 = 75/100 = 75 %" },
+    { "text": "Probabilité 50 % en écriture décimale", "answer": "0.5", "category": "Probabilité simple : écritures", "hint": "50 % = 50/100 = 0,5" },
+    { "text": "Sac de 4 billes rouges et 1 bleue. Probabilité de tirer la bleue (%) ?", "answer": "20", "category": "Probabilité simple : écritures", "hint": "1 chance sur 5 : 1/5 = 20/100 = 20 %" },
+    { "text": "Cartes numérotées de 1 à 10. Probabilité de tirer un nombre pair (en décimal) ?", "answer": "0.5", "category": "Probabilité simple : écritures", "hint": "5 cartes paires sur 10 : 5/10 = 0,5" },
+    { "text": "Dé à 6 faces : probabilité d'obtenir 7 ?", "answer": "0", "category": "Probabilité simple : écritures", "hint": "Un événement impossible a une probabilité de 0." },
+    { "text": "Dé à 6 faces : probabilité d'obtenir moins de 7 ?", "answer": "1", "category": "Probabilité simple : écritures", "hint": "Un événement certain a une probabilité de 1." },
+    { "text": "Un événement de probabilité 0 est :", "answer": "impossible", "category": "Probabilité simple : écritures", "options": ["impossible", "certain", "peu probable"], "hint": "0 : impossible ; 1 : certain." },
+    { "text": "Un événement de probabilité 0,9 est :", "answer": "très probable", "category": "Probabilité simple : écritures", "options": ["très probable", "peu probable", "impossible"], "hint": "0,9 est proche de 1, donc de « certain »." },
+
+    { "text": "10 % de 70", "answer": "7", "category": "Pourcentages simples : 1 %, 10 %, 50 %", "hint": "10 %, c'est diviser par 10." },
+    { "text": "1 % de 300", "answer": "3", "category": "Pourcentages simples : 1 %, 10 %, 50 %", "hint": "1 %, c'est diviser par 100." },
+    { "text": "50 % de 46", "answer": "23", "category": "Pourcentages simples : 1 %, 10 %, 50 %", "hint": "50 %, c'est la moitié." },
+    { "text": "10 % de 4,5", "answer": "0.45", "category": "Pourcentages simples : 1 %, 10 %, 50 %", "hint": "4,5 ÷ 10 = 0,45" },
+    { "text": "1 % de 2 500", "answer": "25", "category": "Pourcentages simples : 1 %, 10 %, 50 %", "hint": "2 500 ÷ 100 = 25" },
+    { "text": "50 % de 13", "answer": "6.5", "category": "Pourcentages simples : 1 %, 10 %, 50 %", "hint": "La moitié de 13 : 6,5" },
+    { "text": "20 % de 40", "answer": "8", "category": "Pourcentages simples : 1 %, 10 %, 50 %", "hint": "20 % = 2 × 10 % : 2 × 4 = 8" },
+    { "text": "5 % de 60", "answer": "3", "category": "Pourcentages simples : 1 %, 10 %, 50 %", "hint": "5 % = la moitié de 10 % : 6 ÷ 2 = 3" },
+
+    { "text": "Quadrilatère avec 4 angles droits et 4 côtés égaux :", "answer": "carré", "category": "Parallélogrammes : quadrilatères particuliers", "options": ["carré", "losange", "rectangle"], "hint": "Le carré est à la fois un rectangle et un losange." },
+    { "text": "Quadrilatère avec 4 côtés de même longueur :", "answer": "losange", "category": "Parallélogrammes : quadrilatères particuliers", "options": ["losange", "rectangle", "trapèze"], "hint": "Un losange a ses 4 côtés de même longueur." },
+    { "text": "Quadrilatère avec 4 angles droits :", "answer": "rectangle", "category": "Parallélogrammes : quadrilatères particuliers", "options": ["rectangle", "losange", "trapèze"], "hint": "Un rectangle a 4 angles droits." },
+    { "text": "Les diagonales d'un rectangle :", "answer": "ont la même longueur", "category": "Parallélogrammes : quadrilatères particuliers", "options": ["ont la même longueur", "sont perpendiculaires", "sont parallèles"], "hint": "Rectangle : diagonales de même longueur, qui se coupent en leur milieu." },
+    { "text": "Les diagonales d'un losange :", "answer": "sont perpendiculaires", "category": "Parallélogrammes : quadrilatères particuliers", "options": ["sont perpendiculaires", "sont parallèles", "ne se coupent pas"], "hint": "Losange : diagonales perpendiculaires, qui se coupent en leur milieu." },
+    { "text": "Un carré est-il un losange ?", "answer": "Oui", "category": "Parallélogrammes : quadrilatères particuliers", "options": ["Oui", "Non"], "hint": "Ses 4 côtés ont la même longueur : c'est un losange particulier." },
+
+    { "text": "Triangle avec exactement deux côtés de même longueur :", "answer": "isocèle", "category": "Triangles : particuliers", "options": ["isocèle", "équilatéral", "quelconque"], "hint": "Isocèle : deux côtés de même longueur." },
+    { "text": "Triangle avec trois côtés de même longueur :", "answer": "équilatéral", "category": "Triangles : particuliers", "options": ["équilatéral", "rectangle", "quelconque"], "hint": "Équilatéral : trois côtés de même longueur." },
+    { "text": "Triangle équilatéral : mesure de chaque angle (°) ?", "answer": "60", "category": "Triangles : particuliers", "hint": "180 ÷ 3 = 60" },
+    { "text": "Triangle isocèle, angle au sommet 40°. Un angle à la base (°) ?", "answer": "70", "category": "Triangles : particuliers", "hint": "(180 − 40) ÷ 2 = 70" },
+    { "text": "Triangle rectangle avec un angle de 35°. L'autre angle aigu (°) ?", "answer": "55", "category": "Triangles : particuliers", "hint": "Les deux angles aigus font 90° ensemble : 90 − 35 = 55" },
+
+    { "text": "Un angle de 35° est :", "answer": "aigu", "category": "Angles : nature", "options": ["aigu", "obtus", "droit"], "hint": "Aigu : moins de 90°." },
+    { "text": "Un angle de 120° est :", "answer": "obtus", "category": "Angles : nature", "options": ["obtus", "aigu", "plat"], "hint": "Obtus : entre 90° et 180°." },
+    { "text": "Un angle de 180° est :", "answer": "plat", "category": "Angles : nature", "options": ["plat", "droit", "obtus"], "hint": "Plat : 180°, ses côtés forment une droite." },
+    { "text": "Un angle de 90° est :", "answer": "droit", "category": "Angles : nature", "options": ["droit", "aigu", "plat"], "hint": "Droit : exactement 90°." },
+
+    { "text": "3,7 × 100", "answer": "370", "category": "Décimaux : opérations ×10, ×100, ÷1 000", "hint": "× 100 : chaque chiffre gagne deux rangs." },
+    { "text": "45 ÷ 1 000", "answer": "0.045", "category": "Décimaux : opérations ×10, ×100, ÷1 000", "hint": "÷ 1 000 : chaque chiffre recule de trois rangs." },
+    { "text": "0,08 × 10", "answer": "0.8", "category": "Décimaux : opérations ×10, ×100, ÷1 000", "hint": "× 10 : chaque chiffre gagne un rang." },
+    { "text": "512 ÷ 100", "answer": "5.12", "category": "Décimaux : opérations ×10, ×100, ÷1 000", "hint": "÷ 100 : chaque chiffre recule de deux rangs." },
+    { "text": "6,05 × 1 000", "answer": "6050", "category": "Décimaux : opérations ×10, ×100, ÷1 000", "hint": "× 1 000 : chaque chiffre gagne trois rangs." },
+    { "text": "0,9 ÷ 10", "answer": "0.09", "category": "Décimaux : opérations ×10, ×100, ÷1 000", "hint": "÷ 10 : chaque chiffre recule d'un rang." },
+
+    { "text": "3 cahiers coûtent 6,30 €. Prix de 5 cahiers (€) ?", "answer": "10.5", "category": "Proportionnalité : retour à l'unité", "hint": "1 cahier : 6,30 ÷ 3 = 2,10 €, puis 5 × 2,10 = 10,50 €" },
+    { "text": "4 kg de pommes coûtent 10 €. Prix de 6 kg (€) ?", "answer": "15", "category": "Proportionnalité : retour à l'unité", "hint": "1 kg : 2,50 €, puis 6 × 2,50 = 15 €" },
+    { "text": "5 stylos coûtent 4 €. Prix de 15 stylos (€) ?", "answer": "12", "category": "Proportionnalité : linéarité", "hint": "15 = 3 × 5, donc le prix est multiplié par 3 : 12 €" },
+    { "text": "2 L de jus pour 6 personnes. Pour 9 personnes (L) ?", "answer": "3", "category": "Proportionnalité : linéarité", "hint": "9 = 6 + 3 : 2 L + 1 L = 3 L" }
+  ]
+}
