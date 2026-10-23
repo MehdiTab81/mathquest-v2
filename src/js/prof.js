@@ -62,11 +62,18 @@ async function profLoad(force) {
   P.key = key; P.loading = true; P.error = ''; render();
   try {
     P.classes = await api('/rest/v1/classes?select=id,name,level,code,created_at&order=created_at.desc');
-    P.students = await apiAll('/rest/v1/students?select=id,class_id,name,last_seen,created_at&order=name');
+    try { P.students = await apiAll('/rest/v1/students?select=id,class_id,name,last_seen,created_at,grp,adapt&order=name'); P.v2 = true; }
+    catch (e) { if (e.status === 401 || e.offline) throw e; P.students = await apiAll('/rest/v1/students?select=id,class_id,name,last_seen,created_at&order=name'); P.v2 = false; }
+    P.assign = []; P.results = [];
     P.stats = null; P.sessions = null;
     if (route.cls) {
       const ids = P.students.filter(s => s.class_id === route.cls).map(s => s.id);
       P.stats = ids.length ? await apiAll(`/rest/v1/notion_stats?select=student_id,level,category,total,correct,last_at&student_id=in.(${ids.join(',')})`) : [];
+    }
+    if (route.cls && P.v2) {
+      P.assign = await api(`/rest/v1/assignments?select=id,title,level,chapter,categories,n,due,grp,created_at&class_id=eq.${route.cls}&order=created_at.desc`);
+      const aids = P.assign.map(a => a.id);
+      P.results = aids.length ? await apiAll(`/rest/v1/assignment_results?select=assignment_id,student_id,score,total,done_at&assignment_id=in.(${aids.join(',')})`) : [];
     }
     if (route.stu) P.sessions = await api(`/rest/v1/sessions?select=played_at,level,chapter,mode,score,total,seconds&student_id=eq.${route.stu}&order=played_at.desc&limit=20`);
   } catch (e) { P.error = e.offline ? e.message : e.status === 401 ? 'Ta session a expiré : reconnecte-toi.' : e.message; if (e.status === 401) { delete store.d.prof; store.save(); } }
@@ -139,8 +146,9 @@ function profClassView(err) {
       <div class="sec"><h2>À retravailler en classe</h2></div>
       ${toRework.length ? `<div class="notions">${toRework.map(notionRow).join('')}</div>` : '<p class="note">Pas encore assez de réponses : une notion apparaît ici avec au moins 10 réponses de la classe et moins de 70 % de réussite.</p>'}
       ${follow.length ? `<div class="sec"><h2>Élèves à accompagner</h2></div><p class="note" style="margin-top:0">${follow.map(x => esc(x.s.name)).join(', ')} : moins de 50 % de réussite sur au moins 20 réponses.</p>` : ''}
-      <div class="sec"><h2>Élèves</h2><span class="muted" style="font-size:13px">réussite · dernière activité</span></div>
-      ${stu.length ? `<div class="rows">${per.map(({ s, a }) => `<button class="row" data-go="#/prof/${c.id}/${s.id}"><div><div class="n">${esc(s.name)}</div>
+      ${P.v2 ? workHTML(c, stu, toRework) : '<p class="msg" style="margin-top:24px">Pour les devoirs, les groupes de besoins et les aménagements, exécutez une fois le fichier supabase/migration-002.sql dans Supabase (SQL Editor), puis rechargez cette page.</p>'}
+      <div class="sec"><h2>Élèves</h2>${P.v2 && stu.length ? '<button class="link" data-act="auto-groups">Répartir en groupes de besoins</button>' : '<span class="muted" style="font-size:13px">réussite · dernière activité</span>'}</div>
+      ${stu.length ? `<div class="rows">${per.map(({ s, a }) => `<button class="row" data-go="#/prof/${c.id}/${s.id}"><div><div class="n">${esc(s.name)}${s.grp ? ` <span class="chip">${esc(s.grp)}</span>` : ''}${s.adapt && Object.values(s.adapt).some(Boolean) ? ' <span class="chip">aménagé</span>' : ''}</div>
           <div class="s">${a.total ? `${plural(a.total, 'réponse')} · ${pct(a.rate)}` : 'pas encore de réponse'} · ${since(s.last_seen)}${a.weak.length ? ` · à travailler : ${esc(a.weak.slice(0, 2).map(w => w.category).join(', '))}` : ''}</div></div>${icon('next')}</button>`).join('')}</div>`
         : '<p class="note">Aucun élève inscrit. Projetez le code ci-contre : chaque élève l’entre dans Progrès → Rejoindre ma classe, avec son prénom et un code secret à 4 chiffres.</p>'}
       <div class="note"><button class="danger" data-act="class-del">Supprimer la classe et ses résultats</button></div>
@@ -158,6 +166,7 @@ function profStudentView(err) {
       <section class="drop slim" aria-labelledby="st-t"><h1 id="st-t" style="--tw:${Math.max(7, s.name.length)}">${esc(s.name)}</h1>
         <p>${a.total ? `${plural(a.total, 'réponse')}, ${pct(a.rate)} de réussite.` : 'Pas encore de réponse.'} Dernière activité : ${since(s.last_seen)}.</p></section>
       <div class="sec"><h2>Compétences</h2></div>${compRows(a.competences)}
+      ${P.v2 ? studentAdaptHTML(s) : ''}
       <div class="bottom-actions"><button class="btn line block" data-act="stu-pin">Donner un nouveau code secret</button><button class="danger" data-act="stu-del">Retirer l’élève de la classe</button></div>
     </div><div class="main">${err}
       <div class="sec"><h2>Points forts</h2></div>
@@ -169,6 +178,55 @@ function profStudentView(err) {
       <div class="sec"><h2>Toutes les notions</h2></div>
       ${a.notions.length ? `<div class="notions">${[...a.notions].sort((x, y) => x.rate - y.rate).map(notionRow).join('')}</div>` : ''}
     </div></div>`;
+}
+
+const GROUPS = ['Consolider', 'Progresser', 'Approfondir'];
+function workHTML(c, stu, toRework) {
+  const chs = DATA.chapters[c.level] || [];
+  const groups = [...new Set(stu.map(x => x.grp).filter(Boolean))];
+  const list = (P.assign || []).map(a => {
+    const target = stu.filter(x => !a.grp || x.grp === a.grp);
+    const res = (P.results || []).filter(r => r.assignment_id === a.id && target.some(x => x.id === r.student_id));
+    const avg = res.length ? res.reduce((m, r) => m + r.score / Math.max(1, r.total), 0) / res.length : null;
+    const missing = target.filter(x => !res.some(r => r.student_id === x.id)).map(x => x.name);
+    return `<article class="work"><div><b>${esc(a.title)}</b>
+      <small>${a.grp ? 'Groupe ' + esc(a.grp) : 'Toute la classe'} · ${plural(a.n, 'question')}${a.due ? ' · pour le ' + new Date(a.due + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}</small>
+      <small>${res.length}/${target.length} fait${res.length > 1 ? 's' : ''}${avg == null ? '' : ' · ' + pct(avg) + ' de réussite'}${missing.length && missing.length <= 8 ? ' · pas encore : ' + esc(missing.join(', ')) : ''}</small></div>
+      <button class="icon-btn" data-act="work-del" data-id="${a.id}" aria-label="Supprimer le devoir ${esc(a.title)}">${icon('close')}</button></article>`;
+  }).join('');
+  const dflt = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+  return `<div class="sec"><h2>Devoirs</h2></div>
+    ${list ? `<div class="works">${list}</div>` : '<p class="note" style="margin-top:0">Aucun devoir. Chaque élève reçoit les questions à son propre palier : un même devoir s’adapte à toute la classe.</p>'}
+    <form class="form classcard" id="work-form" novalidate style="margin-top:16px">
+      <h2 class="cond">Donner un devoir</h2>
+      <div class="field"><label for="w-src">Contenu</label><select class="select" id="w-src" name="src">
+        ${toRework.length ? `<option value="rework">Notions à retravailler en classe (${toRework.length})</option>` : ''}
+        ${chs.map(ch => `<option value="ch:${ch.id}">${esc(ch.name)}</option>`).join('')}</select></div>
+      <div class="field"><label for="w-title">Titre (facultatif)</label><input class="input" id="w-title" name="title" maxlength="60" placeholder="Par défaut : le nom du chapitre"></div>
+      <div class="field"><label for="w-grp">Pour</label><select class="select" id="w-grp" name="grp"><option value="">Toute la classe</option>${[...new Set([...GROUPS.filter(g => groups.includes(g)), ...groups])].map(g => `<option value="${esc(g)}">Groupe ${esc(g)}</option>`).join('')}</select></div>
+      <div class="field"><label for="w-n">Nombre de questions</label><select class="select" id="w-n" name="n"><option>10</option><option>15</option><option>20</option></select></div>
+      <div class="field"><label for="w-due">À faire pour le</label><input class="input" id="w-due" name="due" type="date" value="${dflt}"></div>
+      <button class="btn ink block" type="submit">Donner le devoir</button>
+    </form>`;
+}
+function studentAdaptHTML(st) {
+  const a = st.adapt || {};
+  const row = (key, label, help, on) => `<div class="setting"><div><b id="ad-${key}">${label}</b><small>${help}</small></div><button class="switch" role="switch" aria-checked="${!!on}" aria-labelledby="ad-${key}" data-adapt="${key}"><i></i></button></div>`;
+  return `<div class="sec"><h2>Groupe de besoins</h2></div>
+    <div class="seg grp" role="group" aria-label="Groupe de besoins">${['', ...GROUPS].map(g => `<button data-grp-set="${g}" aria-pressed="${(st.grp || '') === g}">${g || 'Aucun'}</button>`).join('')}</div>
+    <div class="sec"><h2>Aménagements</h2></div>
+    <div class="settings">
+      ${row('dys', 'Police adaptée', 'Pour les élèves dys.', a.dys)}
+      ${row('tts', 'Lecture à voix haute', 'Bouton « Écouter » sur chaque question.', a.tts)}
+      ${row('size', 'Grandes questions', 'Texte agrandi pendant les séries.', a.size > 1)}
+      ${row('t133', 'Tiers-temps', 'Chronos multipliés par 4/3.', a.time > 1)}
+      ${row('t0', 'Sans chrono', 'Aucun chronomètre.', a.time === 0)}
+    </div>
+    <p class="note" style="margin:8px 0 0">Ces aménagements s’appliquent sur l’appareil de l’élève à sa prochaine ouverture de MathQuest ; il ne peut pas les retirer.</p>`;
+}
+async function patchStudent(id, body) {
+  await api(`/rest/v1/students?id=eq.${id}`, { method: 'PATCH', body, prefer: 'return=minimal' });
+  const st = P.students.find(x => x.id === id); if (st) Object.assign(st, body);
 }
 
 /* ---------- Événements ---------- */
@@ -202,6 +260,22 @@ app.addEventListener('submit', async e => {
       }
       store.save(); P.key = '';
     }
+    if (f.id === 'work-form') {
+      const c = P.classes.find(x => x.id === route.cls);
+      const body = { class_id: c.id, level: c.level, n: Number(v.n) || 10, due: v.due || null, grp: v.grp || null };
+      if (v.src === 'rework') {
+        const agg = {};
+        for (const r of P.stats || []) { const k = r.level + '|' + r.category; const x = (agg[k] ||= { level: r.level, category: r.category, total: 0, correct: 0 }); x.total += r.total; x.correct += r.correct; }
+        body.categories = analyse(Object.values(agg)).notions.filter(n => n.total >= 10 && n.rate < .7 && n.level === c.level).sort((a, b) => a.rate - b.rate).slice(0, 8).map(n => n.category);
+        if (!body.categories.length) throw new Error('Pas encore de notions à retravailler pour ce niveau.');
+        body.title = (v.title || '').trim() || 'Notions à retravailler';
+      } else {
+        body.chapter = v.src.slice(3);
+        body.title = (v.title || '').trim() || ((DATA.chapters[c.level] || []).find(ch => ch.id === body.chapter) || {}).name || 'Devoir';
+      }
+      await api('/rest/v1/assignments', { method: 'POST', body, prefer: 'return=minimal' });
+      toast('Devoir donné', 'check'); P.key = ''; profLoad(true);
+    }
     if (f.id === 'class-form') {
       if (!v.name.trim()) throw new Error('Donnez un nom à la classe.');
       await api('/rest/v1/classes', { method: 'POST', body: { name: v.name.trim(), level: v.level }, prefer: 'return=minimal' });
@@ -215,6 +289,24 @@ app.addEventListener('submit', async e => {
 });
 
 app.addEventListener('click', async e => {
+  const g = e.target.closest('[data-grp-set], [data-adapt]');
+  if (g && route.tab === 'prof' && route.stu) {
+    const st = P.students.find(x => x.id === route.stu); if (!st) return;
+    try {
+      if (g.dataset.grpSet != null) await patchStudent(st.id, { grp: g.dataset.grpSet || null });
+      else {
+        const a = { ...(st.adapt || {}) }, k = g.dataset.adapt;
+        if (k === 'dys' || k === 'tts') a[k] = !a[k];
+        if (k === 'size') a.size = a.size > 1 ? undefined : 1.2;
+        if (k === 't133') a.time = a.time > 1 ? undefined : 1.33;
+        if (k === 't0') a.time = a.time === 0 ? undefined : 0;
+        Object.keys(a).forEach(x => (a[x] === undefined || a[x] === false) && delete a[x]);
+        await patchStudent(st.id, { adapt: a });
+      }
+      render();
+    } catch (err) { P.error = err.message; render(); }
+    return;
+  }
   const t = e.target.closest('[data-act]'); if (!t) return;
   const act = t.dataset.act;
   if (act === 'cloud-leave' && await confirmSheet('Changer d’élève ?', 'Cet appareil ne sera plus relié à ta classe. Tes résultats déjà envoyés restent chez ton professeur.', 'Changer', 'Annuler')) { cloudLeave(); store.d.stats = {}; store.save(); render(); }
@@ -230,6 +322,20 @@ app.addEventListener('click', async e => {
     const s = P.students.find(x => x.id === route.stu);
     if (await confirmSheet(`Retirer ${s.name} ?`, 'Ses résultats seront effacés définitivement.', 'Retirer', 'Annuler')) {
       try { await api(`/rest/v1/students?id=eq.${s.id}`, { method: 'DELETE' }); toast('Élève retiré', 'check'); go(`#/prof/${s.class_id}`); profLoad(true); } catch (err) { P.error = err.message; render(); }
+    }
+  }
+  if (act === 'work-del') {
+    if (await confirmSheet('Supprimer ce devoir ?', 'Les résultats déjà rendus seront effacés.', 'Supprimer', 'Annuler')) {
+      try { await api(`/rest/v1/assignments?id=eq.${t.dataset.id}`, { method: 'DELETE' }); toast('Devoir supprimé', 'check'); P.key = ''; profLoad(true); } catch (err) { P.error = err.message; render(); }
+    }
+  }
+  if (act === 'auto-groups') {
+    const stu = P.students.filter(x => x.class_id === route.cls);
+    const plan = stu.map(x => { const a = analyse(rowsFor([x.id])); return { x, g: a.total < 10 ? null : a.rate < .6 ? 'Consolider' : a.rate < .8 ? 'Progresser' : 'Approfondir' }; });
+    const n = plan.filter(p => p.g).length;
+    if (!n) { toast('Pas encore assez de réponses (10 par élève au moins).', 'cross'); return; }
+    if (await confirmSheet('Répartir en 3 groupes ?', `${n} élève${n > 1 ? 's' : ''} avec au moins 10 réponses : moins de 60 % → Consolider, 60 à 80 % → Progresser, plus de 80 % → Approfondir. Vous pourrez ajuster élève par élève.`, 'Répartir', 'Annuler')) {
+      try { for (const p of plan) if (p.g && p.g !== p.x.grp) await patchStudent(p.x.id, { grp: p.g }); toast('Groupes mis à jour', 'check'); render(); } catch (err) { P.error = err.message; render(); }
     }
   }
   if (act === 'stu-pin') {

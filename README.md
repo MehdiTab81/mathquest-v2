@@ -2,18 +2,32 @@
 
 Automatismes de mathématiques au collège, de la 6e à la 3e (priorité 6e et 5e). Gratuit, sans compte, sans installation : tout tient dans `index.html`.
 
-En ligne : https://mehditab81.github.io/mathquest/
+En ligne : https://mehditab81.github.io/mathquest-v2/
 
 ## Ce que contient l'appli
 
-- **≈ 4 500 questions** réparties par niveau et par chapitre, avec la méthode à chaque erreur et des figures dessinées (droite graduée, triangles, Thalès, parallèles, repère, diagramme circulaire…).
-- **Entraînement** : 20 questions, correction et méthode après chaque erreur. Les notions où l'élève a moins de 60 % de réussite reviennent plus souvent.
-- **Examen 9 minutes** : 20 questions chronométrées, relevé du temps par question et correction complète à la fin.
-- **Duel à deux** (téléphone ou tablette) : les deux joueurs face à face, l'écran posé à plat. Même question, quatre réponses ; chaque bonne réponse pousse la ligne centrale vers l'adversaire. Trois bonnes réponses d'affilée : point double.
-- **Battle 2 à 4 joueurs** (tablette) : chacun son coin d'écran, le premier à 5 points gagne.
-- **Progrès** : niveau de joueur, jours d'affilée, médailles par chapitre (bronze, argent, or), notions à retravailler.
+### Pour l'élève
+- **≈ 4 500 questions** par niveau et par chapitre, avec une méthode pour chaque notion et des figures dessinées.
+- **Parcours adaptatif** : chaque question a un palier (1 les bases, 2 confirmé, 3 expert). Chaque notion est servie au palier de l'élève, calculé sur ses 10 dernières réponses.
+- **Test de positionnement** : 2 questions par chapitre, sans chrono, proposé à la première ouverture. Bilan chapitre par chapitre et conseil de départ.
+- **Révisions du jour** : révisions espacées par notion (boîtes de Leitner : 1, 3, 7, 14, 30 jours). Une notion ratée revient le lendemain.
+- **Entraînement** : 20 questions, bouton « Coup de pouce » (la méthode, pour 5 XP au lieu de 10). Après une erreur : bonne réponse, méthode, puis une **question de rattrapage** sur la même notion quelques questions plus loin.
+- **Fiches méthode** par chapitre : la méthode de chaque notion et deux exemples corrigés. On peut s'entraîner sur une seule notion.
+- **Défi du jour** : les mêmes 10 questions pour tous les élèves d'un niveau, une fois par jour.
+- **Chrono** : un maximum de bonnes réponses en 60 secondes, record personnel.
+- **Examen 9 minutes** : chronométré, relevé du temps par question, correction à la fin.
+- **Duel** (2 joueurs, téléphone) et **Battle** (2 à 4 joueurs, tablette) sur un même écran. Sur ordinateur, un message indique de passer sur téléphone ou tablette.
+- **Progrès** : niveau de joueur, jours d'affilée, médailles par chapitre, notions à retravailler, 15 trophées.
 
-Sur ordinateur, les modes à plusieurs affichent un message : ils se jouent avec les doigts, sur téléphone ou tablette.
+### Aménagements (PAP, PPS, élèves dys)
+Dans **Réglages** (roue dentée en haut à droite) : police adaptée aux élèves dys (Atkinson Hyperlegible), questions agrandies, lecture à voix haute des questions et des réponses (écritures mathématiques lues correctement : « 7 fois 8 », « 3 sur 4 »…), **tiers-temps** ou **sans chrono**, animations réduites. Le professeur peut imposer ces aménagements depuis l'Espace prof.
+
+### Pour le professeur (avec Supabase)
+- Classes avec un code à donner aux élèves ; réussite de la classe, notions à retravailler, élèves à accompagner.
+- Pour chaque élève : points forts, points faibles, six compétences du cycle 4 (estimées), dernières séries.
+- **Groupes de besoins** : Consolider, Progresser, Approfondir, avec répartition automatique selon la réussite.
+- **Devoirs** pour la classe ou un groupe, sur un chapitre ou sur les notions à retravailler, avec échéance et suivi (qui a fait quoi, réussite moyenne). Chaque élève reçoit les questions à son propre palier.
+- **Aménagements imposés** par élève (police dys, lecture audio, grandes questions, tiers-temps, sans chrono).
 
 ## Programmes
 
@@ -21,7 +35,7 @@ Sur ordinateur, les modes à plusieurs affichent un message : ils se jouent avec
 - **5e** : nouveau programme de la rentrée 2026 (BO n°10 du 5 mars 2026). Des automatismes ont été ajoutés : probabilités sous plusieurs écritures, 1 %, 10 %, 50 %, quadrilatères et triangles particuliers, nature des angles, ×10/÷1 000, retour à l'unité et linéarité (`src/data/complements-5e-2026.json`).
 - **4e et 3e** : programme du cycle 4 de 2015 ajusté en 2020, jusqu'aux nouveaux programmes annoncés pour la 4e (rentrée 2027) et la 3e (rentrée 2028). Un audit a retiré les questions hors programme (vecteurs, quartiles, réunion et intersection d'événements) et reformulé le PGCD en « plus grand diviseur commun » : voir `AUDIT-4e-3e.md` et `src/data/corrections-cycle4.json`.
 
-Pour recontrôler la banque (recalcul des réponses, QCM, doublons) : `node tools/check-questions.cjs`.
+Pour recontrôler la banque (recalcul des réponses, QCM, doublons) : `node tools/check-questions.cjs`. Pour tester la logique (paliers, révisions, défi du jour, lecture audio) : `node tools/test-core.cjs`.
 
 Relisez les intitulés au moment de chaque rentrée.
 
@@ -50,6 +64,9 @@ Pour rester dans l'offre gratuite, MathQuest n'enregistre pas chaque réponse : 
 1. Menu **Authentication** → **Sign In / Providers** : vérifiez que **Email** est activé.
 2. Menu **Authentication** → **URL Configuration** : dans **Site URL**, mettez `https://mehditab81.github.io/mathquest-v2/` (c'est là que mène le lien de l'e-mail de confirmation).
 
+### 3 bis. Mise à jour pour les devoirs, groupes et aménagements
+Dans **SQL Editor** → **New query**, collez le contenu de `supabase/migration-002.sql` et cliquez sur **Run** (puis **Run query** si un avertissement s'affiche). Tant que ce n'est pas fait, l'Espace prof affiche un bandeau et l'appli fonctionne sans devoirs ni groupes.
+
 ### 4. Relier l'appli
 1. Menu **Project Settings** → **API Keys** (ou bouton **Connect**) : copiez l'**URL du projet** (`https://xxxx.supabase.co`) et la **clé publique** (*Publishable key* `sb_publishable_…`, ou la clé `anon public` dans l'onglet *Legacy*). N'utilisez **jamais** la clé *secret* ou `service_role`.
 2. Collez-les dans `src/cloud-config.json`, puis `node tools/build.cjs` et publiez `index.html`.
@@ -74,10 +91,14 @@ src/js/figures.js              figures géométriques en SVG
 src/js/screens.js              écrans Jouer, chapitre, À deux, Progrès
 src/js/session.js              Entraînement et Examen
 src/js/duo.js                  Duel et Battle
+src/js/learn.js                paliers, révisions espacées, défi du jour, positionnement, fiches, trophées
+src/js/settings.js             réglages, aménagements, lecture à voix haute
+src/js/onboard.js              accueil de première ouverture
 src/js/cloud.js                connexion Supabase, envoi des compteurs, compétences
 src/js/prof.js                 « Ma classe » et Espace professeur
 src/cloud-config.json          URL et clé publique Supabase
 supabase/schema.sql            tables, droits et fonctions à installer dans Supabase
+supabase/migration-002.sql     devoirs, groupes de besoins, aménagements (à exécuter ensuite)
 src/data/questions.json        banque de questions (extraite de l'ancienne version, gardée dans legacy/)
 src/data/complements-5e-2026.json  questions ajoutées pour la 5e
 src/data/corrections-cycle4.json   corrections de conformité 4e/3e (appliquées au build)

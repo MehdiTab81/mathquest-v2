@@ -162,6 +162,7 @@ function leader() {
 
 function endArena(champ) {
   const a = arena; a.state = 'end';
+  bump('duo'); store.save(); checkTrophies();
   sfx.win(); buzz([40, 60, 80]);
   for (let p = 1; p <= a.n; p++) {
     const z = zone(p), won = p === champ;

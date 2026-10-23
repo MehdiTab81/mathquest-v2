@@ -40,7 +40,8 @@ const pupil = () => store.d.cloud || null;
 async function cloudJoin(code, name, pin) {
   const res = await rpc('mq_join', { p_code: code, p_name: name, p_pin: pin });
   if (res.error) throw new Error(JOIN_ERRORS[res.error] || 'Connexion impossible.');
-  store.d.cloud = { token: res.token, name: res.name, class: res.class, level: res.level, pending: (store.d.cloud && store.d.cloud.pending) || [] };
+  store.d.cloud = { token: res.token, name: res.name, class: res.class, level: res.level, grp: res.grp || null, adapt: res.adapt || {}, work: [], done: {}, pending: (store.d.cloud && store.d.cloud.pending) || [] };
+  applyPrefs();
   if (LEVELS[res.level]) store.d.level = res.level;
   store.save();
   // Même élève sur un autre appareil : on reprend sa progression enregistrée.
@@ -58,8 +59,9 @@ async function cloudJoin(code, name, pin) {
   }
   store.save();
   cloudFlush();
+  cloudSync();
 }
-function cloudLeave() { delete store.d.cloud; store.save(); }
+function cloudLeave() { delete store.d.cloud; store.save(); applyPrefs(); }
 
 /* Fin de série : compteurs par notion de cette série uniquement. */
 function cloudRecordSession(s) {
@@ -68,7 +70,8 @@ function cloudRecordSession(s) {
   for (const l of s.log.filter(Boolean)) { const c = (by[l.q.category] ||= { c: l.q.category, t: 0, k: 0 }); c.t++; if (l.ok) c.k++; }
   const stats = Object.values(by); if (!stats.length) return;
   const good = stats.reduce((a, x) => a + x.k, 0);
-  p.pending.push({ level: s.lv, stats, session: { chapter: s.chapter.name, mode: s.mode === 'exam' ? 'exam' : 'train', score: good, total: s.qs.length, seconds: Math.round((Date.now() - s.t0) / 1000) } });
+  const total = s.stream ? s.log.filter(Boolean).length : s.qs.length;
+  p.pending.push({ level: s.lv, stats, session: { chapter: (s.chapter && s.chapter.name) || s.M.label, mode: s.mode, score: good, total, seconds: Math.round((Date.now() - s.t0) / 1000), assignment: s.opts.assignment || undefined } });
   p.pending = p.pending.slice(-50); // au-delà, l'appareil est resté longtemps hors ligne : on garde le plus récent
   store.save();
   cloudFlush();
@@ -87,6 +90,26 @@ async function cloudFlush() {
     }
   } catch (e) { /* hors ligne : on réessaiera à la prochaine série ou au prochain lancement */ }
   flushing = false;
+  cloudSync();
+}
+
+/* Devoirs, groupe et aménagements décidés par le professeur. */
+let syncing = false;
+async function cloudSync() {
+  const p = pupil(); if (!cloudOn() || !p || syncing) return;
+  syncing = true;
+  try {
+    const res = await rpc('mq_sync', { p_token: p.token });
+    if (res && res.error === 'SESSION_INVALIDE') { cloudLeave(); toast('Ton professeur a changé ton code : reconnecte-toi dans Progrès.', 'cross'); }
+    else if (res && !res.error) {
+      p.work = res.work || []; p.grp = res.grp || null; p.adapt = res.adapt || {};
+      p.done ||= {};
+      for (const id of res.done || []) p.done[id] ||= { score: null };
+      store.save(); applyPrefs();
+      if (!session && !arena && !document.querySelector('dialog[open]') && (route.tab === 'home' || route.tab === 'settings') && !route.chapter && !route.fiche) render();
+    }
+  } catch (e) { /* hors ligne ou base pas encore mise à jour (migration-002.sql) */ }
+  syncing = false;
 }
 
 /* ---------- Analyse des réponses : savoir-faire et compétences ---------- */

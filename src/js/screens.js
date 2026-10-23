@@ -16,6 +16,8 @@ function parseRoute() {
   if (a === 'chapitre' && b) return { tab: 'home', chapter: b };
   if (a === 'a-deux') return { tab: 'duo' };
   if (a === 'progres') return { tab: 'progress' };
+  if (a === 'reglages') return { tab: 'settings' };
+  if (a === 'fiche' && b) return { tab: 'home', fiche: b };
   if (a === 'prof') { const [, , c] = h.split('/'); return { tab: 'prof', cls: b || null, stu: c || null }; }
   return { tab: 'home', chapter: null };
 }
@@ -37,7 +39,7 @@ function topBar() {
     <div class="pills">
       <span class="pill" title="Ton niveau de joueur">Niv. ${L.n}</span>
       ${days ? `<span class="pill" title="Jours d'entraînement d'affilée">${icon('flame')}${days} j</span>` : ''}
-      <button class="icon-btn" data-act="sound" aria-label="${store.d.sound ? 'Couper le son' : 'Activer le son'}" aria-pressed="${!store.d.sound}">${icon(store.d.sound ? 'sound' : 'mute')}</button>
+      <button class="icon-btn" data-go="#/reglages" aria-label="Réglages et aménagements" ${route.tab === 'settings' ? 'aria-current="page"' : ''}>${icon('gear')}</button>
     </div>
   </header>`;
 }
@@ -79,6 +81,7 @@ function homeView() {
       </section>
     </div>
     <div class="main">
+      ${todayHTML(lv)}
       <div class="sec"><h2>Chapitres de ${L.short}</h2><button class="link" data-start="train" data-ch="${MIX.id}">Tout mélanger</button></div>
       <div class="rows">
         ${chs.map(ch => {
@@ -93,6 +96,54 @@ function homeView() {
     </div>
   </div>`;
 }
+/* Aujourd'hui : devoirs, révisions espacées, défi du jour, chrono, positionnement. */
+function todayHTML(lv) {
+  const items = [];
+  const p = pupil();
+  const work = p && p.work ? p.work.filter(w => w.level === lv && !(p.done && p.done[w.id])) : [];
+  for (const w of work.slice(0, 3)) {
+    items.push(`<button class="mode hw" data-today="work:${w.id}"><span class="ico">${icon('calendar')}</span><span><b>Devoir : ${esc(w.title)}</b><small>${plural(w.n || 10, 'question')}${w.due ? ` · pour le ${new Date(w.due + 'T12:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}` : ''}</small></span>${icon('next')}</button>`);
+  }
+  const due = dueNotions(lv);
+  items.push(`<button class="mode" data-today="review"><span class="ico">${icon('refresh')}</span><span><b>Révisions du jour</b><small>${due.length ? `${plural(due.length, 'notion')} à revoir aujourd’hui, juste avant de les oublier.` : 'À jour. Les notions travaillées reviendront ici au bon moment.'}</small></span>${due.length ? `<span class="badge">${due.length}</span>` : icon('check')}</button>`);
+  const d = dailyState(lv);
+  items.push(`<button class="mode" data-today="daily"><span class="ico">${icon('medal')}</span><span><b>Défi du jour</b><small>${d ? `Ton score : ${d.score}/10 en ${Math.round(d.ms / 1000)} s. Tu peux tenter de faire mieux.` : `10 questions, les mêmes pour tous les élèves de ${LEVELS[lv].short} aujourd’hui.`}</small></span>${d ? `<span class="badge">${d.score}/10</span>` : icon('next')}</button>`);
+  const best = ((store.d.best || {}).sprint || {})[lv];
+  items.push(`<button class="mode" data-today="sprint"><span class="ico">${icon('timer')}</span><span><b>Chrono ${Math.round((timed(60000) || 90000) / 1000)} secondes</b><small>Un maximum de bonnes réponses.${best ? ` Ton record : ${best}.` : ''}</small></span>${best ? `<span class="badge">${best}</span>` : icon('next')}</button>`);
+  if (!(store.d.placed || {})[lv]) items.push(`<button class="mode" data-today="place"><span class="ico">${icon('chart')}</span><span><b>Test de positionnement</b><small>${placementQuestions(lv).length} questions sans chrono pour régler la difficulté à ton niveau.</small></span>${icon('next')}</button>`);
+  return `<div class="sec"><h2>Aujourd’hui</h2></div><div class="modes today">${items.join('')}</div>`;
+}
+
+/* ---------- Fiche méthode d'un chapitre ---------- */
+function ficheView(id) {
+  const lv = store.d.level, ch = chapterById(lv, id);
+  if (!ch) return homeView();
+  const items = ficheOf(lv, id);
+  const cats = store.cats(lv);
+  return `${topBar()}
+  <div class="layout"><div class="side">
+    <button class="back" data-go="#/chapitre/${ch.id}">${icon('back', 'sm')} ${esc(ch.name)}</button>
+    <section class="drop slim" aria-labelledby="fi-t"><h1 id="fi-t" ${tw('Fiche méthode')}>Fiche méthode</h1>
+      <p>${esc(ch.name)} · ${LEVELS[lv].short}. Pour chaque notion : la méthode, puis des exemples corrigés.</p></section>
+  </div><div class="main">
+    <div class="fiches">${items.map(it => { const r = recentRate(cats[it.cat]);
+      return `<article class="fiche">
+        <header><h3>${esc(it.cat)}</h3>${r == null ? '' : `<span class="pct">${Math.round(r * 100)} %</span>`}</header>
+        ${it.m ? `<p class="fm">${mathHTML(it.m)}</p>` : ''}
+        ${it.ex.map(x => `<p class="fx"><span>${mathHTML(promptOf({ text: x.t, options: x.o ? [1] : null }))}</span><b>${answerHTML(x.a, !!x.o)}</b>${x.h && x.h !== it.m ? `<small>${mathHTML(x.h)}</small>` : ''}</p>`).join('')}
+        <button class="link" data-notion="${esc(it.cat)}">S’entraîner sur cette notion</button>
+      </article>`; }).join('')}</div>
+  </div></div>`;
+}
+
+/* ---------- Trophées ---------- */
+function trophiesHTML() {
+  const got = store.d.trophies || {};
+  const n = TROPHIES.filter(t => got[t.id]).length;
+  return `<div class="sec"><h2>Trophées</h2><span class="muted" style="font-size:13px">${n}/${TROPHIES.length}</span></div>
+    <div class="trophies">${TROPHIES.map(t => `<div class="trophy ${got[t.id] ? 'on' : ''}"><span class="ti">${icon(got[t.id] ? t.icon : 'lock')}</span><b>${t.name}</b><small>${t.how}</small></div>`).join('')}</div>`;
+}
+
 function legendHTML() {
   return `<div class="legend" aria-label="Lecture des cases"><span><i class="h"></i>Prochaine étape</span><span><i class="f"></i>Commencé</span><span><i class="f"></i><i class="f"></i>Bronze : 10 réponses, 60 %</span><span><i class="f"></i><i class="f"></i><i class="f"></i>Argent : 25, 75 %</span><span><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i>Or : 50, 90 %</span></div>`;
 }
@@ -107,7 +158,7 @@ function chapterView(id) {
   const touch = isTouch();
   const modes = [
     ['train', 'book', 'Entraînement', '20 questions. Après une erreur, tu vois la bonne réponse et la méthode.', ''],
-    ['exam', 'timer', 'Examen 9 minutes', '20 questions chronométrées, correction complète à la fin.', ''],
+    ['exam', 'timer', timed(9 * 60000) ? `Examen ${Math.round(timed(9 * 60000) / 60000)} minutes` : 'Examen sans chrono', timed(9 * 60000) ? '20 questions chronométrées, correction complète à la fin.' : '20 questions sans chronomètre, correction complète à la fin.', ''],
     ['duel', 'swords', 'Duel à deux', 'Face à face sur le même écran. Chaque point tire la corde vers toi.', touch ? '' : 'Tablette ou téléphone'],
     ['battle', 'crowd', 'Battle 2 à 4 joueurs', 'Tablette posée à plat. Le premier à 5 points gagne.', touch ? '' : 'Tablette ou téléphone'],
   ];
@@ -119,7 +170,7 @@ function chapterView(id) {
         ${bigNum(lv)}
         <h1 id="ch-title" ${tw(ch.name)}>${esc(ch.name)}</h1>
         <p>${LEVELS[lv].name} · ${plural(pool.length, 'question')}. ${st.t ? `${plural(st.t, 'réponse')}, ${Math.round(st.rate * 100)} % de réussite.` : 'Pas encore commencé.'} ${esc(nextMedalLine(st))}</p>
-        <div class="actions">${cellsHTML(st.step, 4, 'lg')}</div>
+        <div class="actions">${cellsHTML(st.step, 4, 'lg')}<button class="btn line" data-go="#/fiche/${ch.id}">${icon('book', 'sm')} Fiche méthode</button></div>
       </section>
     </div>
     <div class="main">
@@ -128,10 +179,10 @@ function chapterView(id) {
         ${modes.map(([m, ic, t, s, tag]) => `<button class="mode" ${m === 'duel' || m === 'battle' ? `data-duo="${m}"` : `data-start="${m}"`} data-ch="${ch.id}">
           <span class="ico">${icon(ic)}</span><span><b>${t}</b><small>${s}</small></span>${tag ? `<span class="tag">${tag}</span>` : icon('next')}</button>`).join('')}
       </div>
-      <div class="sec"><h2>Notions</h2><span class="muted" style="font-size:13px">ta réussite</span></div>
+      <div class="sec"><h2>Notions</h2><span class="muted" style="font-size:13px">touche une notion pour t’entraîner</span></div>
       <div class="notions">
-        ${names.map(n => { const c = cats[n]; const p = c && c.t ? Math.round(c.c / c.t * 100) : null;
-          return `<div class="notion"><span>${esc(n)}</span><span class="bar" aria-hidden="true"><i style="width:${p || 0}%"></i></span><span class="pct">${p == null ? '–' : p + ' %'}</span></div>`; }).join('')}
+        ${names.map(n => { const c = cats[n]; const r = recentRate(c); const p = r == null ? null : Math.round(r * 100); const tier = targetTier(lv, n);
+          return `<button class="notion pick" data-notion="${esc(n)}"><span>${esc(n)}<small class="tier-txt">${TIER_NAMES[tier]}</small></span><span class="bar" aria-hidden="true"><i style="width:${p || 0}%"></i></span><span class="pct">${p == null ? '–' : p + ' %'}</span></button>`; }).join('')}
       </div>
       ${isEntretien(lv, ch) ? '<p class="note">Questions des années précédentes, pour garder les automatismes bien en place.</p>' : ''}
     </div>
@@ -162,6 +213,7 @@ function progressView() {
       <div class="rows">${chaptersOf(lv).map(ch => { const st = chapterStats(lv, ch);
         return `<button class="row" data-go="#/chapitre/${ch.id}"><div><div class="n">${esc(ch.name)}</div><div class="s">${st.t ? `${plural(st.t, 'réponse')} · ` : ''}${medalText(st)}</div></div>${cellsHTML(st.step)}</button>`; }).join('')}</div>
       ${legendHTML()}
+      ${trophiesHTML()}
       <p class="note">${pupil() && cloudOn() ? 'Ta progression est enregistrée sur cet appareil et envoyée à ton professeur : ton prénom, ta réussite par notion et le résumé de tes séries. Rien d’autre.' : 'Ta progression reste sur cet appareil, dans ce navigateur. Aucun compte, aucune donnée envoyée.'}</p>
       ${cloudOn() ? '<div class="note"><button class="link" data-go="#/prof">Espace professeur</button></div>' : ''}
       <div class="note"><button class="danger" data-act="reset">Remettre à zéro la progression de ${LEVELS[lv].short}</button></div>
@@ -219,12 +271,14 @@ function render() {
   let html;
   if (route.tab === 'progress') html = progressView();
   else if (route.tab === 'prof') html = profView();
+  else if (route.tab === 'settings') html = settingsView();
+  else if (route.fiche) html = ficheView(route.fiche);
   else if (route.tab === 'duo') html = duoView();
   else if (route.chapter) html = chapterView(route.chapter);
   else html = homeView();
   app.innerHTML = `<div class="shell">${html}</div>`;
-  const titles = { home: 'Jouer', duo: 'À deux', progress: 'Progrès', prof: 'Espace prof' };
-  document.title = `MathQuest · ${route.chapter ? (chapterById(store.d.level, route.chapter) || {}).name || '' : titles[route.tab]}`;
+  const titles = { home: 'Jouer', duo: 'À deux', progress: 'Progrès', prof: 'Espace prof', settings: 'Réglages' };
+  document.title = `MathQuest · ${route.fiche ? 'Fiche méthode' : route.chapter ? (chapterById(store.d.level, route.chapter) || {}).name || '' : titles[route.tab]}`;
 }
 
 app.addEventListener('click', async e => {
@@ -243,6 +297,25 @@ app.addEventListener('click', async e => {
       startSession({ lv, chapter: ch, mode: t.dataset.start, pool: questionsOf(lv, ch.id) });
     }
     return;
+  }
+  if (t.dataset.today) {
+    const lv = store.d.level, v = t.dataset.today;
+    if (v === 'review') return startReview(lv);
+    if (v === 'daily') return startDaily(lv);
+    if (v === 'sprint') return startSprint(lv);
+    if (v === 'place') return startPlacement(lv);
+    if (v.startsWith('work:')) {
+      const w = ((pupil() || {}).work || []).find(x => x.id === v.slice(5)); if (!w) return;
+      let pool = w.chapter ? questionsOf(w.level, w.chapter) : questionsOf(w.level, MIX.id);
+      if (w.categories && w.categories.length) pool = questionsOf(w.level, MIX.id).filter(q => w.categories.includes(q.category));
+      return startSession({ lv: w.level, chapter: { id: 'work', name: w.title }, mode: 'homework', pool, n: w.n || 10, assignment: w.id });
+    }
+    return;
+  }
+  if (t.dataset.notion) {
+    const lv = store.d.level, cat = t.dataset.notion;
+    const pool = questionsOf(lv, MIX.id).filter(q => q.category === cat);
+    return startSession({ lv, chapter: { id: 'notion', name: cat }, mode: 'train', pool, n: Math.min(10, Math.max(5, pool.length)) });
   }
   if (t.dataset.duo) { store.d.duoMode = t.dataset.duo; store.d.duoLevel = store.d.level; store.d.duoChapter = t.dataset.ch; store.save(); go('#/a-deux'); window.scrollTo(0, 0); return; }
   if (t.dataset.duoMode) { store.d.duoMode = t.dataset.duoMode; store.save(); render(); return; }

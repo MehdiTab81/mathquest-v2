@@ -7,7 +7,7 @@ const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 const { data, report } = require('./bank.cjs').loadBank();
 for (const r of report) if (r.removed || r.edited) console.log(`correction : ${r.removed} retirée(s), ${r.edited} modifiée(s) · ${r.why}`);
 
-const order = ['core', 'kit', 'figures', 'screens', 'cloud', 'prof', 'session', 'duo', 'main'];
+const order = ['core', 'kit', 'figures', 'screens', 'learn', 'settings', 'cloud', 'prof', 'onboard', 'session', 'duo', 'main'];
 const cloud = JSON.parse(read('src/cloud-config.json'));
 if (process.env.MQ_CLOUD_URL) Object.assign(cloud, { url: process.env.MQ_CLOUD_URL, key: process.env.MQ_CLOUD_KEY || 'test' }); // essais locaux
 const js = order.map(f => `// ---- ${f}.js\n` + read(`src/js/${f}.js`)).join('\n');
@@ -28,7 +28,7 @@ if (out) {
     '<meta name="description" content="Automatismes de maths au collège, de la 6e à la 3e.">',
     '<link rel="preconnect" href="https://fonts.googleapis.com">',
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
-    '<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">',
+    '<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">',
     '<style>', read('src/styles.css'), '</style>', '',
   ].join('\n');
   fs.writeFileSync(out, head + body);

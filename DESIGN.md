@@ -217,6 +217,27 @@ Pills (999px) for buttons, segmented controls and status pills; 12px for keys an
 ### Duel rope (signature)
 - The centre line between the two halves is the rope: every point moves it, growing the scorer's half by 5% (up to 75/25). A knot on the line shows the lead and the line itself drains as the round timer.
 
+### Today rows
+- Paper mode rows under « Aujourd’hui » on the home screen (révisions, défi, chrono, positionnement). A homework row takes the level colourway as its ground. A count or score sits in an ink badge with colourway text.
+
+### Tier pips
+- Three small ink-outlined cells next to each question show its tier (1 to 3), filled in ink up to the tier.
+
+### Switch
+- 60 × 34px track, 2px ink border, ink knob; on = colourway track. Disabled (imposed by the teacher) at 55% opacity with a colourway « Réglé par ton professeur » chip.
+
+### Fiche (method sheet)
+- Paper card, 2px ink border, 16px radius: condensed caps notion title, bold method line, worked examples split by hairlines with the answer right-aligned in 900 weight.
+
+### Trophy
+- Locked: hairline border, lock icon on shade. Unlocked: ink border, paper ground, icon in colourway on ink.
+
+### Onboarding
+- Full-screen colourway field; level choices are four tiles, each in its own level colourway with a 56px condensed numeral.
+
+### Dys reading mode
+- Reading text switches to Atkinson Hyperlegible with +0.02em tracking and 1.6 leading; the wordmark, numerals and condensed headings keep Archivo so the world stays recognisable.
+
 ## Do's and Don'ts
 
 ### Do:

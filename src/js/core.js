@@ -45,7 +45,9 @@ const store = {
   load() {
     let d = null;
     try { d = JSON.parse(localStorage.getItem(this.key)); } catch (e) { /* stockage indisponible */ }
-    this.d = Object.assign({ level: '6eme', sound: true, xp: 0, days: { count: 0, last: null }, stats: {}, best: {}, names: ['', '', '', ''], duoMode: 'duel', duoLevel: null, duoChapter: MIX.id, duoPlayers: 3 }, d || {});
+    this.d = Object.assign({ level: '6eme', sound: true, xp: 0, days: { count: 0, last: null }, stats: {}, best: {}, names: ['', '', '', ''], duoMode: 'duel', duoLevel: null, duoChapter: MIX.id, duoPlayers: 3, prefs: {}, onboarded: false }, d || {});
+    // Anciennes installations : on ne remontre pas l'accueil à un élève qui a déjà joué.
+    if (!d || (!d.onboarded && d.stats && Object.keys(d.stats).length)) this.d.onboarded = !!(d && d.stats && Object.keys(d.stats).length);
     if (!LEVELS[this.d.level]) this.d.level = '6eme';
   },
   save() { try { localStorage.setItem(this.key, JSON.stringify(this.d)); } catch (e) { /* mode privé : la partie continue sans sauvegarde */ } },
@@ -53,6 +55,7 @@ const store = {
   record(lv, category, ok) {
     const c = (this.cats(lv)[category] ||= { t: 0, c: 0 });
     c.t++; if (ok) c.c++;
+    c.r = ((c.r || '') + (ok ? '1' : '0')).slice(-10); // 10 dernières réponses
   },
   touchDay() {
     const t = today(), d = this.d.days;
@@ -103,16 +106,18 @@ function medalText(st) {
   return 'pas encore commencé';
 }
 
-/* Notions faibles : au moins 3 réponses et moins de 60 % de réussite. */
+/* Notions faibles : au moins 3 réponses et moins de 60 % de réussite sur les réponses récentes. */
 function weakCats(lv) {
-  return Object.entries(store.cats(lv)).filter(([, v]) => v.t >= 3 && v.c / v.t < .6).map(([k]) => k);
+  return Object.entries(store.cats(lv)).filter(([, v]) => v.t >= 3 && recentRate(v) < .6).map(([k]) => k);
 }
 
-/* Tirage équilibré : on fait tourner les notions, les notions faibles reviennent plus souvent. */
-function pickQuestions(pool, n, weak = []) {
+/* Tirage équilibré : on fait tourner les notions, les notions faibles reviennent plus souvent,
+   et chaque notion est servie au palier de l'élève (si lv est donné). */
+function pickQuestions(pool, n, weak = [], lv = null) {
   if (!pool.length) return [];
   const by = new Map();
   for (const q of shuffle(pool)) { if (!by.has(q.category)) by.set(q.category, []); by.get(q.category).push(q); }
+  if (lv) for (const [k, list] of by) by.set(k, orderByTier(list, targetTier(lv, k)));
   const weakSet = new Set(weak);
   const base = Math.max(1, Math.ceil(n * .15));
   const order = shuffle([...by.keys()]).sort((a, b) => weakSet.has(b) - weakSet.has(a));
@@ -129,9 +134,15 @@ function pickQuestions(pool, n, weak = []) {
       out.push(list.pop()); used.set(k, (used.get(k) || 0) + 1); moved = true;
     }
   }
-  if (out.length < n) { // petites banques : on complète sans plafond
-    const rest = shuffle(pool.filter(q => !out.includes(q)));
-    while (out.length < n && rest.length) out.push(rest.pop());
+  // Peu de notions (série sur une notion, révisions) : on complète sans plafond, toujours au bon palier.
+  moved = true;
+  while (out.length < n && moved) {
+    moved = false;
+    for (const k of order) {
+      if (out.length >= n) break;
+      const list = by.get(k);
+      if (list.length) { out.push(list.pop()); moved = true; }
+    }
   }
   return shuffle(out);
 }
